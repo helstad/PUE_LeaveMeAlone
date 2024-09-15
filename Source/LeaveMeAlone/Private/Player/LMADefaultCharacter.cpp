@@ -55,6 +55,7 @@ void ALMADefaultCharacter::Tick(float DeltaTime)
 
 	if (bCursorMoved)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Cursor Moved"));
 		RotateTowardsCursor(DeltaTime);
 		UpdateCursor();
 		bCursorMoved = false;
