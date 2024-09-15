@@ -25,6 +25,9 @@ protected:
 	UCameraComponent* CameraComponent = nullptr;
 
 	UPROPERTY()
+	APlayerController* PlayerController = nullptr;
+	
+	UPROPERTY()
 	UDecalComponent* CurrentCursor = nullptr;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cursor")
@@ -52,16 +55,18 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
+	bool bCursorMoved;
 	float YRotation = -75.0f;
 	float ArmLength = 1400.0f;
 	float FOV = 55.0f;
 
+	void InitComponents();
+	
 	void MoveForward(float Value);
 	void MoveRight(float Value);
-	void ZoomCamera(float AxisValue);
-
-	void UpdateCursor();
+	void ZoomCamera(const float AxisValue);
 	void RotateTowardsCursor(float DeltaTime);
 
-	void InitComponents();
+	void UpdateCursor();
+	void OnCursorMoved(float Value);
 };

@@ -37,14 +37,28 @@ void ALMADefaultCharacter::InitComponents()
 void ALMADefaultCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+
+	if (CursorMaterial)
+	{
+		CurrentCursor = UGameplayStatics::SpawnDecalAtLocation(
+			GetWorld(), CursorMaterial, CursorSize, FVector::ZeroVector);
+	}
+
 	UpdateCursor();
 }
 
 void ALMADefaultCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	RotateTowardsCursor(DeltaTime);
-	UpdateCursor();
+
+	if (bCursorMoved)
+	{
+		RotateTowardsCursor(DeltaTime);
+		UpdateCursor();
+		bCursorMoved = false;
+	}
 }
 
 void ALMADefaultCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -54,81 +68,83 @@ void ALMADefaultCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	PlayerInputComponent->BindAxis("MoveForward", this, &ALMADefaultCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ALMADefaultCharacter::MoveRight);
 	PlayerInputComponent->BindAxis("ZoomCamera", this, &ALMADefaultCharacter::ZoomCamera);
+
+	PlayerInputComponent->BindAxis("MouseMove", this, &ALMADefaultCharacter::OnCursorMoved);
 }
 
 void ALMADefaultCharacter::RotateTowardsCursor(float DeltaTime)
 {
-	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-	if (PC)
+	FHitResult ResultHit;
+	if (PlayerController && PlayerController->GetHitResultUnderCursor(ECC_GameTraceChannel1, true, ResultHit))
 	{
-		FHitResult ResultHit;
-		PC->GetHitResultUnderCursor(ECC_GameTraceChannel1, true, ResultHit);
+		const FVector ActorLocation = GetActorLocation();
+		const FVector TargetLocation = ResultHit.Location;
+		const FRotator TargetRotation = UKismetMathLibrary::FindLookAtRotation(ActorLocation, TargetLocation);
+		const FRotator CurrentRotation = GetActorRotation();
+		const FRotator NewRotation = FMath::RInterpTo(CurrentRotation, FRotator(0.0f, TargetRotation.Yaw, 0.0f), DeltaTime, RotationSpeed);
 
-		if (ResultHit.bBlockingHit)
-		{
-			FRotator TargetRotation = UKismetMathLibrary::FindLookAtRotation(
-				GetActorLocation(), ResultHit.Location);
-			FRotator CurrentRotation = GetActorRotation();
-
-			FRotator NewRotation = FMath::RInterpTo(
-				CurrentRotation,
-				FRotator(0.0f, TargetRotation.Yaw, 0.0f), 
-				DeltaTime,
-				RotationSpeed);
-			SetActorRotation(NewRotation);
-		}
+		SetActorRotation(NewRotation);
 	}
 }
 
-
 void ALMADefaultCharacter::UpdateCursor()
 {
-	if (CursorMaterial && !CurrentCursor)
+	if (CurrentCursor && PlayerController)
 	{
-		CurrentCursor = UGameplayStatics::SpawnDecalAtLocation(
-			GetWorld(), CursorMaterial, CursorSize, FVector(0));
-	}
-
-	if (CurrentCursor)
-	{
-		APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-		if (PC)
+		FVector WorldLocation, WorldDirection;
+		if (PlayerController->DeprojectMousePositionToWorld(WorldLocation, WorldDirection))
 		{
-			FHitResult ResultHit;
-			PC->GetHitResultUnderCursor(ECC_GameTraceChannel1, true, ResultHit);
+			FHitResult HitResult;
+			FVector EndLocation = WorldLocation + WorldDirection * 10000.0f;
+			GetWorld()->LineTraceSingleByChannel(HitResult, WorldLocation, EndLocation, ECC_Visibility);
 
-			if (ResultHit.bBlockingHit)
+			if (HitResult.IsValidBlockingHit())
 			{
-				CurrentCursor->SetWorldLocation(ResultHit.Location);
+				CurrentCursor->SetWorldLocation(HitResult.Location);
 			}
 		}
 	}
 }
 
+void ALMADefaultCharacter::OnCursorMoved(float Value)
+{
+	if (FMath::Abs(Value) > KINDA_SMALL_NUMBER)
+	{
+		bCursorMoved = true;
+	}
+}
+
 void ALMADefaultCharacter::MoveForward(float Value)
 {
-	FVector ForwardVector = CameraComponent->GetForwardVector();
-	ForwardVector.Z = 0;
-	ForwardVector.Normalize();
-	
-	AddMovementInput(ForwardVector, Value);
+	if (FMath::Abs(Value) > KINDA_SMALL_NUMBER && CameraComponent)
+	{
+		FVector ForwardVector = CameraComponent->GetForwardVector();
+		ForwardVector.Z = 0;
+		ForwardVector.Normalize();
+
+		AddMovementInput(ForwardVector, Value);
+	}
 }
 
 void ALMADefaultCharacter::MoveRight(float Value)
 {
-	FVector RightVector = CameraComponent->GetRightVector();
-	RightVector.Z = 0;
-	RightVector.Normalize();
-	
-	AddMovementInput(RightVector, Value);
+	if (FMath::Abs(Value) > KINDA_SMALL_NUMBER && CameraComponent)
+	{
+		FVector RightVector = CameraComponent->GetRightVector();
+		RightVector.Z = 0;
+		RightVector.Normalize();
+
+		AddMovementInput(RightVector, Value);
+	}
 }
 
 void ALMADefaultCharacter::ZoomCamera(const float AxisValue)
 {
 	if (FMath::Abs(AxisValue) > KINDA_SMALL_NUMBER)
 	{
-		float NewLength = SpringArmComponent->TargetArmLength - AxisValue * ZoomSpeed;
-		NewLength = FMath::Clamp(NewLength, MinZoom, MaxZoom);
-		SpringArmComponent->TargetArmLength = NewLength;
+		SpringArmComponent->TargetArmLength = FMath::Clamp(
+			SpringArmComponent->TargetArmLength - AxisValue * ZoomSpeed,
+			MinZoom,
+			MaxZoom);
 	}
 }
