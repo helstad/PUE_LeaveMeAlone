@@ -8,6 +8,8 @@
 
 class UCameraComponent;
 class USpringArmComponent;
+class ULMAHealthComponent;
+class UAnimMontage;
 
 UCLASS()
 class LEAVEMEALONE_API ALMADefaultCharacter : public ACharacter
@@ -16,7 +18,10 @@ class LEAVEMEALONE_API ALMADefaultCharacter : public ACharacter
 
 public:
 	ALMADefaultCharacter();
-	
+
+	UFUNCTION()
+	ULMAHealthComponent* GetHealthComponent() const { return HealthComponent; }
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USpringArmComponent* SpringArmComponent = nullptr;
@@ -26,13 +31,13 @@ protected:
 
 	UPROPERTY()
 	APlayerController* PlayerController = nullptr;
-	
+
 	UPROPERTY()
 	UDecalComponent* CurrentCursor = nullptr;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cursor")
 	UMaterialInterface* CursorMaterial = nullptr;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cursor")
 	FVector CursorSize = FVector(20.0f, 32.0f, 32.0f);
 
@@ -47,6 +52,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float RotationSpeed = 10.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components|Health")
+	ULMAHealthComponent* HealthComponent;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	UAnimMontage* DeathMontage;
 	
 	virtual void BeginPlay() override;
 
@@ -61,7 +72,7 @@ private:
 	float FOV = 55.0f;
 
 	void InitComponents();
-	
+
 	void MoveForward(float Value);
 	void MoveRight(float Value);
 	void ZoomCamera(const float AxisValue);
@@ -69,4 +80,9 @@ private:
 
 	void UpdateCursor();
 	void OnCursorMoved(float Value);
+
+	void OnDeath();
+	void RotationPlayerOnCursor();
+
+	void OnHealthChanged(float NewHealth);
 };

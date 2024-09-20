@@ -4,6 +4,8 @@
 #include "Camera/CameraComponent.h"
 #include "Components/DecalComponent.h"
 #include "Components/InputComponent.h"
+#include "Components/LMAHealthComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -32,6 +34,8 @@ void ALMADefaultCharacter::InitComponents()
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
+
+	HealthComponent = CreateDefaultSubobject<ULMAHealthComponent>(TEXT("HealthComponent"));
 }
 
 void ALMADefaultCharacter::BeginPlay()
@@ -39,6 +43,11 @@ void ALMADefaultCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+
+	HealthComponent->OnDeath.AddUObject(this, &ALMADefaultCharacter::OnDeath);
+
+	OnHealthChanged(HealthComponent->GetHealth());
+	HealthComponent->OnHealthChanged.AddUObject(this, &ALMADefaultCharacter::OnHealthChanged);
 
 	if (CursorMaterial)
 	{
@@ -58,6 +67,11 @@ void ALMADefaultCharacter::Tick(float DeltaTime)
 		RotateTowardsCursor(DeltaTime);
 		UpdateCursor();
 		bCursorMoved = false;
+	}
+
+	if (!HealthComponent->IsDead())
+	{
+		RotationPlayerOnCursor();
 	}
 }
 
@@ -112,6 +126,46 @@ void ALMADefaultCharacter::OnCursorMoved(float Value)
 	{
 		bCursorMoved = true;
 	}
+}
+
+void ALMADefaultCharacter::OnDeath()
+{
+	CurrentCursor->DestroyRenderState_Concurrent();
+
+	PlayAnimMontage(DeathMontage);
+	GetCharacterMovement()->DisableMovement();
+	SetLifeSpan(5.0f);
+
+	if (Controller)
+	{
+		Controller->ChangeState(NAME_Spectating);
+	}
+}
+
+void ALMADefaultCharacter::RotationPlayerOnCursor()
+{
+	if (PlayerController)
+	{
+		FHitResult HitResult;
+		PlayerController->GetHitResultUnderCursor(ECC_GameTraceChannel1, true, HitResult);
+		float FindRotatorResultYaw = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), HitResult.Location).Yaw;
+		SetActorRotation(FQuat(FRotator(0.0f, FindRotatorResultYaw, 0.0f)));
+
+		if (CurrentCursor)
+		{
+			CurrentCursor->SetWorldLocation(HitResult.Location);
+		}
+	}
+}
+
+void ALMADefaultCharacter::OnHealthChanged(float NewHealth)
+{
+	GEngine->AddOnScreenDebugMessage(
+		-1,
+		2.0f,
+		FColor::Red,
+		FString::Printf(TEXT("Health = %f"),
+			NewHealth));
 }
 
 void ALMADefaultCharacter::MoveForward(float Value)

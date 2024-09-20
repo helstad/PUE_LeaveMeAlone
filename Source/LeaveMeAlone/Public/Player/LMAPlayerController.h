@@ -15,5 +15,6 @@ public:
 	ALMAPlayerController();
 
 protected:
+	virtual void BeginSpectatingState() override;
 	virtual void BeginPlay() override;
 };
