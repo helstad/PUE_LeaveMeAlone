@@ -83,6 +83,9 @@ void ALMADefaultCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	PlayerInputComponent->BindAxis("MoveRight", this, &ALMADefaultCharacter::MoveRight);
 	PlayerInputComponent->BindAxis("ZoomCamera", this, &ALMADefaultCharacter::ZoomCamera);
 
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ALMADefaultCharacter::StartSprinting);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ALMADefaultCharacter::StopSprinting);
+	
 	PlayerInputComponent->BindAxis("MouseMove", this, &ALMADefaultCharacter::OnCursorMoved);
 }
 
@@ -95,10 +98,83 @@ void ALMADefaultCharacter::RotateTowardsCursor(float DeltaTime)
 		const FVector TargetLocation = ResultHit.Location;
 		const FRotator TargetRotation = UKismetMathLibrary::FindLookAtRotation(ActorLocation, TargetLocation);
 		const FRotator CurrentRotation = GetActorRotation();
-		const FRotator NewRotation = FMath::RInterpTo(CurrentRotation, FRotator(0.0f, TargetRotation.Yaw, 0.0f), DeltaTime, RotationSpeed);
+		
+		const FRotator NewRotation = FMath::RInterpTo(
+			CurrentRotation,
+			FRotator(0.0f, TargetRotation.Yaw, 0.0f),
+			DeltaTime, RotationSpeed);
 
 		SetActorRotation(NewRotation);
 	}
+}
+
+void ALMADefaultCharacter::StartSprinting()
+{
+	if (Stamina > 0 && !bIsSprinting && !bSprintBlocked)
+	{
+		bIsSprinting = true;
+		bCanRecoverStamina = false;
+		
+		GetWorld()->GetTimerManager().SetTimer(
+			StaminaTimerHandle, this,
+			&ALMADefaultCharacter::DrainStamina,
+			StaminaUpdateFrequency, true);
+
+		GetCharacterMovement()->MaxWalkSpeed *= SpringSpeedMultiplier;
+	}
+}
+
+void ALMADefaultCharacter::StopSprinting()
+{
+	if (bIsSprinting)
+	{
+		bIsSprinting = false;
+		GetWorld()->GetTimerManager().ClearTimer(StaminaTimerHandle);
+		bCanRecoverStamina = true;
+		
+		GetWorld()->GetTimerManager().SetTimer(
+			StaminaTimerHandle, this,
+			&ALMADefaultCharacter::RecoverStamina,
+			StaminaUpdateFrequency, true);
+		
+		GetCharacterMovement()-> MaxWalkSpeed /= SpringSpeedMultiplier;
+	}
+}
+
+void ALMADefaultCharacter::DrainStamina()
+{
+	if (Stamina > 0)
+	{
+		Stamina = FMath::Clamp(Stamina - StaminaDrainRate * StaminaUpdateFrequency, 0.0f, MaxStamina);
+		if (Stamina <= 0.0f)
+		{
+			StopSprinting();
+			bSprintBlocked = true;
+			
+			GetWorld()->GetTimerManager().SetTimer(
+				StaminaBlockTimerHandle, this,
+				&ALMADefaultCharacter::UnblockSprint,
+				StaminaBlockDuration, false);
+		}
+	}
+}
+
+void ALMADefaultCharacter::RecoverStamina()
+{
+	if (Stamina < MaxStamina && bCanRecoverStamina)
+	{
+		Stamina = FMath::Clamp(Stamina + StaminaRecoveryRate * StaminaUpdateFrequency, 0.0f, MaxStamina);
+		if (Stamina >= MaxStamina)
+		{
+			GetWorld()->GetTimerManager().ClearTimer(StaminaTimerHandle);
+		}
+	}
+}
+
+void ALMADefaultCharacter::UnblockSprint()
+{
+	bSprintBlocked = false;
+	GetWorld()->GetTimerManager().ClearTimer(StaminaBlockTimerHandle);
 }
 
 void ALMADefaultCharacter::UpdateCursor()
@@ -170,9 +246,9 @@ void ALMADefaultCharacter::OnHealthChanged(float NewHealth)
 
 void ALMADefaultCharacter::MoveForward(float Value)
 {
-	if (FMath::Abs(Value) > KINDA_SMALL_NUMBER && CameraComponent)
+	if (FMath::Abs(Value) > KINDA_SMALL_NUMBER)
 	{
-		FVector ForwardVector = CameraComponent->GetForwardVector();
+		FVector ForwardVector = GetActorForwardVector();
 		ForwardVector.Z = 0;
 		ForwardVector.Normalize();
 
@@ -182,9 +258,9 @@ void ALMADefaultCharacter::MoveForward(float Value)
 
 void ALMADefaultCharacter::MoveRight(float Value)
 {
-	if (FMath::Abs(Value) > KINDA_SMALL_NUMBER && CameraComponent)
+	if (FMath::Abs(Value) > KINDA_SMALL_NUMBER)
 	{
-		FVector RightVector = CameraComponent->GetRightVector();
+		FVector RightVector = GetActorRightVector();
 		RightVector.Z = 0;
 		RightVector.Normalize();
 

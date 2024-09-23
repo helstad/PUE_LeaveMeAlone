@@ -18,19 +18,21 @@ public:
 	ULMAHealthComponent();
 
 	UFUNCTION(BlueprintCallable)
-	float GetHealth() const { return Health; }
+	FORCEINLINE float GetHealth() const { return Health; }
 
 	UFUNCTION(BlueprintCallable)
-	bool IsDead() const;
+	FORCEINLINE bool IsDead() const { return Health <= 0.0f; }
 
+	UFUNCTION(BlueprintCallable)
 	bool AddHealth(float NewHealth);
-	bool IsHealthFull() const;
+
+	FORCEINLINE bool IsHealthFull() const { return FMath::IsNearlyEqual(Health, MaxHealth); }
 	
 	FOnDeath OnDeath;
 	FOnHealthChanged OnHealthChanged;
 
 protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Health")
 	float MaxHealth = 100.0f;
 
 	virtual void BeginPlay() override;
@@ -40,4 +42,6 @@ private:
 
 	UFUNCTION()
 	void OnTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+
+	void ApplyDamage(float Damage);
 };

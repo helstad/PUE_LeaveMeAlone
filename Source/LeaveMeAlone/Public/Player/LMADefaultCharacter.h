@@ -21,6 +21,9 @@ public:
 
 	UFUNCTION()
 	ULMAHealthComponent* GetHealthComponent() const { return HealthComponent; }
+	
+	UFUNCTION(BlueprintCallable, Category="Sprint")
+	bool IsSprinting() const { return bIsSprinting; }
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -58,7 +61,28 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Animation")
 	UAnimMontage* DeathMontage;
-	
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Sprint")
+	float MaxStamina = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Sprint")
+	float Stamina = MaxStamina;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Sprint")
+	float SpringSpeedMultiplier = 1.5f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Sprint")
+	float StaminaDrainRate = 10.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Sprint")
+	float StaminaRecoveryRate = 5.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Spring")
+	float StaminaUpdateFrequency = 0.1f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Sprint")
+	float StaminaBlockDuration = 3.0f;
+
 	virtual void BeginPlay() override;
 
 public:
@@ -66,7 +90,14 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
+	FTimerHandle StaminaTimerHandle;
+	FTimerHandle StaminaBlockTimerHandle;
+	
+	bool bCanRecoverStamina = true;
+	bool bIsSprinting = false;
+	bool bSprintBlocked = false;
 	bool bCursorMoved;
+	
 	float YRotation = -75.0f;
 	float ArmLength = 1400.0f;
 	float FOV = 55.0f;
@@ -77,6 +108,12 @@ private:
 	void MoveRight(float Value);
 	void ZoomCamera(const float AxisValue);
 	void RotateTowardsCursor(float DeltaTime);
+
+	void StartSprinting();
+	void StopSprinting();
+	void DrainStamina();
+	void RecoverStamina();
+	void UnblockSprint();
 
 	void UpdateCursor();
 	void OnCursorMoved(float Value);
