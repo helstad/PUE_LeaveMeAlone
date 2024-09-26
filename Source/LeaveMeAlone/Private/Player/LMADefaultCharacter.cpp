@@ -36,6 +36,7 @@ void ALMADefaultCharacter::InitComponents()
 	bUseControllerRotationRoll = false;
 
 	HealthComponent = CreateDefaultSubobject<ULMAHealthComponent>(TEXT("HealthComponent"));
+	WeaponComponent = CreateDefaultSubobject<ULMAWeaponComponent>(TEXT("WeaponComponent"));
 }
 
 void ALMADefaultCharacter::BeginPlay()
@@ -85,6 +86,9 @@ void ALMADefaultCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ALMADefaultCharacter::StartSprinting);
 	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ALMADefaultCharacter::StopSprinting);
+
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, WeaponComponent, &ULMAWeaponComponent::Fire);
+	PlayerInputComponent->BindAction("Reload", IE_Pressed, WeaponComponent, &ULMAWeaponComponent::Reload);
 	
 	PlayerInputComponent->BindAxis("MouseMove", this, &ALMADefaultCharacter::OnCursorMoved);
 }
@@ -120,7 +124,7 @@ void ALMADefaultCharacter::StartSprinting()
 			&ALMADefaultCharacter::DrainStamina,
 			StaminaUpdateFrequency, true);
 
-		GetCharacterMovement()->MaxWalkSpeed *= SpringSpeedMultiplier;
+		GetCharacterMovement()->MaxWalkSpeed *= SprintSpeedMultiplier;
 	}
 }
 
@@ -137,7 +141,7 @@ void ALMADefaultCharacter::StopSprinting()
 			&ALMADefaultCharacter::RecoverStamina,
 			StaminaUpdateFrequency, true);
 		
-		GetCharacterMovement()-> MaxWalkSpeed /= SpringSpeedMultiplier;
+		GetCharacterMovement()-> MaxWalkSpeed /= SprintSpeedMultiplier;
 	}
 }
 
