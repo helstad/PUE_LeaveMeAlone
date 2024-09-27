@@ -46,6 +46,7 @@ void ALMABaseWeapon::DecrementBullets()
 
 	if (IsCurrentClipEmpty())
 	{
+		OnAmmoEmpty.Broadcast();
 		ChangeClip();
 	}
 }
@@ -68,5 +69,10 @@ void ALMABaseWeapon::Fire()
 void ALMABaseWeapon::ChangeClip()
 {
 	CurrentAmmoWeapon.Bullets = AmmoWeapon.Bullets;
+}
+
+bool ALMABaseWeapon::IsClipFull() const
+{
+	return CurrentAmmoWeapon.Bullets >= AmmoWeapon.Bullets;
 }
 

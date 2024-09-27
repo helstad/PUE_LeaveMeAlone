@@ -8,6 +8,8 @@
 
 class USkeletalMeshComponent;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAmmoEmptyDelegate);
+
 USTRUCT(BlueprintType)
 struct FAmmoWeapon
 {
@@ -32,6 +34,9 @@ class LEAVEMEALONE_API ALMABaseWeapon : public AActor
 public:
 	ALMABaseWeapon();
 
+	UPROPERTY(BlueprintAssignable)
+	FOnAmmoEmptyDelegate OnAmmoEmpty;
+	
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Weapon")
 	USkeletalMeshComponent* MeshComponent;
@@ -52,14 +57,19 @@ private:
 public:
 	virtual void Tick(float DeltaTime) override;
 
+	UFUNCTION()
 	void Fire();
+
+	UFUNCTION(BlueprintCallable)
 	void ChangeClip();
-	
+	bool IsClipFull() const;
+
+	bool IsCurrentClipEmpty() const;
+
 protected:
 	virtual void BeginPlay() override;
 
 	void Shoot();
-
 	void DecrementBullets();
-	bool IsCurrentClipEmpty() const;
+	
 };

@@ -14,22 +14,44 @@ ULMAWeaponComponent::ULMAWeaponComponent()
 void ULMAWeaponComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	SpawnWeapon();
 	InitAnimNotify();
 }
 
-void ULMAWeaponComponent::Fire()
+void ULMAWeaponComponent::FireRepeatedly()
 {
 	if (Weapon && !AnimReloading)
 	{
+		if (Weapon->IsCurrentClipEmpty())
+		{
+			OnAmmoEmpty();
+			return;
+		}
 		Weapon->Fire();
 	}
 }
 
+void ULMAWeaponComponent::StartFiring()
+{
+	if (Weapon && !AnimReloading)
+	{
+		GetWorld()->GetTimerManager().SetTimer(
+			FireTimerHandle, this,
+			&ULMAWeaponComponent::FireRepeatedly,
+			FireRate, true);
+	}
+}
+
+void ULMAWeaponComponent::StopFiring()
+{
+	GetWorld()->GetTimerManager().ClearTimer(FireTimerHandle);
+}
+
 void ULMAWeaponComponent::Reload()
 {
-	if (!CanReload()) return;
+	if (!CanReload())
+		return;
 
 	AnimReloading = true;
 	ACharacter* Character = Cast<ACharacter>(GetOwner());
@@ -47,6 +69,8 @@ void ULMAWeaponComponent::SpawnWeapon()
 
 	if (Weapon)
 	{
+		Weapon->OnAmmoEmpty.AddDynamic(this, &ULMAWeaponComponent::OnAmmoEmpty);
+		
 		if (const auto Character = Cast<ACharacter>(GetOwner()))
 		{
 			FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, false);
@@ -57,7 +81,8 @@ void ULMAWeaponComponent::SpawnWeapon()
 
 void ULMAWeaponComponent::InitAnimNotify()
 {
-	if (!ReloadMontage) return;
+	if (!ReloadMontage)
+		return;
 
 	const auto NotifiesEvents = ReloadMontage->Notifies;
 	for (auto NotifyEvent : NotifiesEvents)
@@ -68,6 +93,11 @@ void ULMAWeaponComponent::InitAnimNotify()
 			break;
 		}
 	}
+}
+
+void ULMAWeaponComponent::OnAmmoEmpty()
+{
+	Reload();
 }
 
 void ULMAWeaponComponent::OnNotifyReloadFinished(USkeletalMeshComponent* SkeletalMesh)
@@ -82,6 +112,5 @@ void ULMAWeaponComponent::OnNotifyReloadFinished(USkeletalMeshComponent* Skeleta
 
 bool ULMAWeaponComponent::CanReload() const
 {
-	return !AnimReloading;
+	return !AnimReloading && !Weapon->IsClipFull();
 }
-
