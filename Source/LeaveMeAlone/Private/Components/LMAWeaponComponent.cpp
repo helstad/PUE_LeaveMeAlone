@@ -19,7 +19,7 @@ void ULMAWeaponComponent::BeginPlay()
 	InitAnimNotify();
 }
 
-void ULMAWeaponComponent::FireRepeatedly()
+void ULMAWeaponComponent::Fire()
 {
 	if (Weapon && !AnimReloading)
 	{
@@ -28,7 +28,16 @@ void ULMAWeaponComponent::FireRepeatedly()
 			OnAmmoEmpty();
 			return;
 		}
-		Weapon->Fire();
+
+		if (CurrentFireMode == EFireMode::SingleShot)
+		{
+			Weapon->Fire();
+			StopFiring();
+		}
+		else if (CurrentFireMode == EFireMode::Automatic)
+		{
+			Weapon->Fire();
+		}
 	}
 }
 
@@ -38,7 +47,7 @@ void ULMAWeaponComponent::StartFiring()
 	{
 		GetWorld()->GetTimerManager().SetTimer(
 			FireTimerHandle, this,
-			&ULMAWeaponComponent::FireRepeatedly,
+			&ULMAWeaponComponent::Fire,
 			FireRate, true);
 	}
 }
@@ -56,6 +65,16 @@ void ULMAWeaponComponent::Reload()
 	AnimReloading = true;
 	ACharacter* Character = Cast<ACharacter>(GetOwner());
 	Character->PlayAnimMontage(ReloadMontage);
+}
+
+void ULMAWeaponComponent::ToggleFireMode()
+{
+	CurrentFireMode = (CurrentFireMode == EFireMode::SingleShot) ? EFireMode::Automatic : EFireMode::SingleShot;
+	GEngine->AddOnScreenDebugMessage(
+		-1,
+		2.0f,
+		FColor::Yellow,
+		FString::Printf(TEXT("Fire mode: %hhd"), CurrentFireMode));
 }
 
 void ULMAWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)

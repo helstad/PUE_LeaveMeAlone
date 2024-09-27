@@ -89,6 +89,7 @@ void ALMADefaultCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, WeaponComponent, &ULMAWeaponComponent::StartFiring);
 	PlayerInputComponent->BindAction("Fire", IE_Released, WeaponComponent, &ULMAWeaponComponent::StopFiring);
+	PlayerInputComponent->BindAction("FireMode", IE_Pressed, WeaponComponent, &ULMAWeaponComponent::ToggleFireMode);
 	PlayerInputComponent->BindAction("Reload", IE_Pressed, WeaponComponent, &ULMAWeaponComponent::Reload);
 	
 	PlayerInputComponent->BindAxis("MouseMove", this, &ALMADefaultCharacter::OnCursorMoved);

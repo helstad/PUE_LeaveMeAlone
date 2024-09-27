@@ -10,6 +10,13 @@
 class ALMABaseWeapon;
 class UAnimMontage;
 
+UENUM(BlueprintType)
+enum class EFireMode : uint8
+{
+	SingleShot UMETA(DisplayName = "Single Shot"),
+	Automatic UMETA(DisplayName = "Automatic"),
+};
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class LEAVEMEALONE_API ULMAWeaponComponent : public UActorComponent
 {
@@ -39,11 +46,11 @@ private:
 	FTimerHandle FireTimerHandle;
 	
 	bool AnimReloading = false;
+
+	EFireMode CurrentFireMode = EFireMode::Automatic;
 	
 	/** METHODS **/
 public:
-	// void Fire();
-
 	UFUNCTION()
 	void StartFiring();
 
@@ -52,6 +59,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void Reload();
+
+	UFUNCTION(BlueprintCallable)
+	void ToggleFireMode();
 	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
@@ -59,7 +69,7 @@ protected:
 	virtual void BeginPlay() override;
 	
 private:
-	void FireRepeatedly();
+	void Fire();
 	void SpawnWeapon();
 	void InitAnimNotify();
 
