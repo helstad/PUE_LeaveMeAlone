@@ -65,6 +65,7 @@ public:
 	bool IsClipFull() const;
 
 	bool IsCurrentClipEmpty() const;
+	FAmmoWeapon GetCurrentAmmoWeapon() const { return CurrentAmmoWeapon; }
 
 protected:
 	virtual void BeginPlay() override;

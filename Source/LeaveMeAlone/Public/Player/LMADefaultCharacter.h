@@ -83,7 +83,7 @@ protected:
 	/** Cursor properties */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cursor")
 	UMaterialInterface* CursorMaterial = nullptr;
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cursor")
 	FVector CursorSize = FVector(20.0f, 32.0f, 32.0f);
 
@@ -136,6 +136,9 @@ private:
 	void UnblockSprint();
 
 	/** Health handling */
+	UFUNCTION()
 	void OnHealthChanged(float NewHealth);
+
+	UFUNCTION()
 	void OnDeath();
 };

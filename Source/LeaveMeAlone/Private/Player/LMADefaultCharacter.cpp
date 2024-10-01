@@ -1,6 +1,7 @@
 // LeaveMeAlone Game by Netology. All Rights Reserved.
 
 #include "Player/LMADefaultCharacter.h"
+
 #include "Camera/CameraComponent.h"
 #include "Components/DecalComponent.h"
 #include "Components/InputComponent.h"
@@ -45,7 +46,7 @@ void ALMADefaultCharacter::BeginPlay()
 
 	PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 
-	HealthComponent->OnDeath.AddUObject(this, &ALMADefaultCharacter::OnDeath);
+	HealthComponent->OnDeath.AddDynamic(this, &ALMADefaultCharacter::OnDeath);
 
 	OnHealthChanged(HealthComponent->GetHealth());
 	HealthComponent->OnHealthChanged.AddUObject(this, &ALMADefaultCharacter::OnHealthChanged);
@@ -217,7 +218,7 @@ void ALMADefaultCharacter::OnDeath()
 	PlayAnimMontage(DeathMontage);
 	GetCharacterMovement()->DisableMovement();
 	SetLifeSpan(5.0f);
-
+	
 	if (Controller)
 	{
 		Controller->ChangeState(NAME_Spectating);
@@ -242,12 +243,6 @@ void ALMADefaultCharacter::RotationPlayerOnCursor()
 
 void ALMADefaultCharacter::OnHealthChanged(float NewHealth)
 {
-	GEngine->AddOnScreenDebugMessage(
-		-1,
-		2.0f,
-		FColor::Red,
-		FString::Printf(TEXT("Health = %f"),
-			NewHealth));
 }
 
 void ALMADefaultCharacter::MoveForward(float Value)

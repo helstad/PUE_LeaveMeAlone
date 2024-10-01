@@ -6,7 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "LMAHealthComponent.generated.h"
 
-DECLARE_MULTICAST_DELEGATE(FOnDeath);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDeath);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnHealthChanged, float);
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -27,8 +27,10 @@ public:
 	bool AddHealth(float NewHealth);
 
 	FORCEINLINE bool IsHealthFull() const { return FMath::IsNearlyEqual(Health, MaxHealth); }
-	
+
+	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnDeath OnDeath;
+	
 	FOnHealthChanged OnHealthChanged;
 
 protected:

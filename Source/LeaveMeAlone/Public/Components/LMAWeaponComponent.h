@@ -51,6 +51,12 @@ private:
 	
 	/** METHODS **/
 public:
+	UFUNCTION(BlueprintCallable)
+	bool GetCurrentWeaponAmmo(FAmmoWeapon& AmmoWeapon) const;
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE EFireMode GetFireMode() const { return CurrentFireMode; }
+	
 	UFUNCTION()
 	void StartFiring();
 

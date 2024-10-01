@@ -41,6 +41,17 @@ void ULMAWeaponComponent::Fire()
 	}
 }
 
+bool ULMAWeaponComponent::GetCurrentWeaponAmmo(FAmmoWeapon& AmmoWeapon) const
+{
+	if (Weapon)
+	{
+		AmmoWeapon = Weapon->GetCurrentAmmoWeapon();
+		return true;
+	}
+
+	return false;
+}
+
 void ULMAWeaponComponent::StartFiring()
 {
 	if (Weapon && !AnimReloading)
