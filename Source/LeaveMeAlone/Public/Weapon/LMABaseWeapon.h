@@ -50,6 +50,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Weapon")
 	FAmmoWeapon AmmoWeapon{30, 0, true};
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Weapon")
+	float Damage = 20.0f;
+	
 private:
 	FAmmoWeapon CurrentAmmoWeapon;
 	
@@ -67,6 +70,8 @@ public:
 	bool IsCurrentClipEmpty() const;
 	FAmmoWeapon GetCurrentAmmoWeapon() const { return CurrentAmmoWeapon; }
 
+	void MakeDamage(const FHitResult& Hit);
+	
 protected:
 	virtual void BeginPlay() override;
 

@@ -49,7 +49,7 @@ void ALMADefaultCharacter::BeginPlay()
 	HealthComponent->OnDeath.AddDynamic(this, &ALMADefaultCharacter::OnDeath);
 
 	OnHealthChanged(HealthComponent->GetHealth());
-	HealthComponent->OnHealthChanged.AddUObject(this, &ALMADefaultCharacter::OnHealthChanged);
+	HealthComponent->OnHealthChanged.AddDynamic(this, &ALMADefaultCharacter::OnHealthChanged);
 
 	if (CursorMaterial)
 	{

@@ -7,7 +7,7 @@
 #include "LMAHealthComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDeath);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnHealthChanged, float);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChanged, float, NewHealth);
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class LEAVEMEALONE_API ULMAHealthComponent : public UActorComponent
@@ -30,7 +30,8 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnDeath OnDeath;
-	
+
+	UPROPERTY(BlueprintAssignable)
 	FOnHealthChanged OnHealthChanged;
 
 protected:

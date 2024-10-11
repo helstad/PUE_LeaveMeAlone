@@ -3,6 +3,9 @@
 
 #include "Weapon/LMABaseWeapon.h"
 
+#include "Engine/DamageEvents.h"
+#include "Kismet/GameplayStatics.h"
+
 DEFINE_LOG_CATEGORY_STATIC(LogWeapon, All, All);
 
 ALMABaseWeapon::ALMABaseWeapon()
@@ -11,6 +14,20 @@ ALMABaseWeapon::ALMABaseWeapon()
 
 	MeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Weapon"));
 	SetRootComponent(MeshComponent);
+}
+
+void ALMABaseWeapon::MakeDamage(const FHitResult& Hit)
+{
+	const auto Zombie = Hit.GetActor();
+	if (!Zombie) return;
+
+	const auto Pawn = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	if (!Pawn) return;
+
+	// const auto Controller = Pawn->GetController<APlayerController>();
+	// if (!Controller) return;
+
+	Zombie->TakeDamage(Damage, FDamageEvent(), Pawn, this);
 }
 
 void ALMABaseWeapon::BeginPlay()
@@ -31,9 +48,13 @@ void ALMABaseWeapon::Shoot()
 	FHitResult HitResult;
 	GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_Visibility);
 
+	FVector TracerEnd = TraceEnd;
+	
 	if (HitResult.bBlockingHit)
 	{
-		DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, 5.0f, 24, FColor::Red, false, 1.0f);
+		// DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, 5.0f, 24, FColor::Red, false, 1.0f);
+		MakeDamage(HitResult);
+		TracerEnd = HitResult.ImpactPoint;
 	}
 
 	DecrementBullets();
